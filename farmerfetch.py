@@ -5,6 +5,9 @@ from supabase import create_client, Client
 
 # ---------------- Supabase Setup ----------------
 # Fetch from secrets
+import os
+print("DEBUG SUPABASE_URL:", os.getenv("SUPABASE_URL"))
+print("DEBUG SUPABASE_KEY:", os.getenv("SUPABASE_KEY"))
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 
