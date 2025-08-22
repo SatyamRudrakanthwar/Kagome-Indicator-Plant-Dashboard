@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 from supabase import create_client, Client
+import os
 
 # ---------------- Supabase Setup ----------------
 # Fetch from secrets
