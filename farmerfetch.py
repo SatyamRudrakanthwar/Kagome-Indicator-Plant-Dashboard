@@ -5,8 +5,8 @@ from supabase import create_client, Client
 
 # ---------------- Supabase Setup ----------------
 # Fetch from secrets
-supabase_url = st.secrets["SUPABASE_URL"]
-supabase_key = st.secrets["SUPABASE_KEY"]
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
 
 # Create Supabase client
 supabase: Client = create_client(supabase_url, supabase_key)
