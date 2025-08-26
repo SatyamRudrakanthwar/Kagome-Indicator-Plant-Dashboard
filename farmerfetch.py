@@ -2,20 +2,81 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 from supabase import create_client, Client
-import os
+import base64
+
+import streamlit as st
+import base64
+
+def get_base64_of_bin_file(bin_file):
+    """Encodes a binary file (e.g., an image) into a base64 string."""
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def set_sidebar_bg(image_file, opacity=0.3):
+    """Sets a local image as the background of the sidebar only with given opacity."""
+    bin_str = get_base64_of_bin_file(image_file)
+    sidebar_bg = f"""
+    <style>
+    [data-testid="stSidebar"] {{
+        position: relative;
+    }}
+    [data-testid="stSidebar"]::before {{
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url("data:image/png;base64,{bin_str}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: {opacity};
+        z-index: 0;
+    }}
+    [data-testid="stSidebar"] * {{
+        position: relative;
+        z-index: 1;
+    }}
+    </style>
+    """
+    st.markdown(sidebar_bg, unsafe_allow_html=True)
+
+# Example usage
+set_sidebar_bg("bgimage.jpg", opacity=0.5)
+
+# Sidebar content
+st.sidebar.title(" ")
+st.sidebar.write(" ")
+
+# Main content
+st.write(" ")
 
 # ---------------- Supabase Setup ----------------
 # Fetch from secrets
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
+supabase_url = st.secrets["SUPABASE_URL"]
+supabase_key = st.secrets["SUPABASE_KEY"]
 
 # Create Supabase client
 supabase: Client = create_client(supabase_url, supabase_key)
 
-st.logo("AgriSavant Logo wo tagline white wo tagline.png", size="large")
-st.title("Agrisavant-kagome dashboard")
+import streamlit as st
 
-# ✅ Helper function to safely convert date strings/None
+col1, col2, col3, col4, col5 = st.columns([2, 1, 0.2, 1, 2])
+
+with col2:
+    st.image("AgriSavant Logo.png", width=100)
+    
+
+with col4:
+    st.image("Kagome-logo2.png", width=500)
+
+st.markdown(
+    "<h1 style='text-align: center;'>Agrisavant - Kagome Dashboard</h1>", 
+    unsafe_allow_html=True
+)
+
 def to_date(val):
     if not val:
         return pd.Timestamp.today().date()
@@ -61,7 +122,7 @@ else:
 
 # ---------- Tabs ----------
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "👨‍🌾 Farmer Info", "🌱 Nursery", "🧪 Spraying", "🌾 Harvesting", "📥 Receiving"
+    "👨‍🌾 Farmer Info", "🌱 Nursery", "🧪 Spraying", "🌾 Harvesting", "📥 Receiving Processor"
 ])
 
 # ---------- Farmer Info ----------
@@ -108,7 +169,7 @@ with tab4:
         with col1:
             harvest["harvest_date"] = st.date_input(f"Harvest Date {i+1}", value=to_date(harvest.get("harvest_date")), key=f"harvest_date_{i}")
         with col2:
-            harvest["harvest_qty"] = st.number_input(f"Qty {i+1} (ml)", min_value=0, value=int(harvest.get("harvest_qty", 0)), key=f"harvest_qty_{i}")
+            harvest["harvest_qty"] = st.number_input(f"Qty {i+1} (kg)", min_value=0, value=int(harvest.get("harvest_qty", 0)), key=f"harvest_qty_{i}")
         with col3:
             if st.button("❌", key=f"del_harvest_{i}"):
                 st.session_state.harvesting.pop(i)
@@ -118,15 +179,15 @@ with tab4:
 
 # ---------- Receiving ----------
 with tab5:
-    st.write("📥 Receiving Records")
+    st.write("📥 Processor Receiving Records")
     for i, recv in enumerate(st.session_state.receiving):
         col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
         with col1:
             recv["receiving_date"] = st.date_input(f"Receiving Date {i+1}", value=to_date(recv.get("receiving_date")), key=f"recv_date_{i}")
         with col2:
-            recv["receiving_qty"] = st.number_input(f"Qty {i+1}", min_value=0, value=int(recv.get("receiving_qty", 0)), key=f"recv_qty_{i}")
+            recv["receiving_qty"] = st.number_input(f"Qty {i+1} (kg)", min_value=0, value=int(recv.get("receiving_qty", 0)), key=f"recv_qty_{i}")
         with col3:
-            recv["accepted_qty"] = st.number_input(f"Accepted {i+1}", min_value=0, value=int(recv.get("accepted_qty", 0)), key=f"recv_acc_{i}")
+            recv["accepted_qty"] = st.number_input(f"Accepted {i+1} (kg)", min_value=0, value=int(recv.get("accepted_qty", 0)), key=f"recv_acc_{i}")
         with col4:
             if st.button("❌", key=f"del_recv_{i}"):
                 st.session_state.receiving.pop(i)
@@ -261,10 +322,10 @@ if st.button("💾 Save Changes"):
 
     except Exception as e:
         st.error(f"❌ Error saving data: {e}")
-        
-# ---------------- Download All Data ----------------
+
+# ---------------- Download Data ----------------
 if farmer_id or selected_farmer == "➕ Add New Farmer":
-    st.subheader("📋 Download All Data")
+    st.subheader("📋 Download Data")
 
     # Prepare data for all tabs
     farmer_data = {
@@ -286,13 +347,14 @@ if farmer_id or selected_farmer == "➕ Add New Farmer":
     all_data = [farmer_data]
 
     # Add spraying data
-    for i, spray in enumerate(st.session_state.spraying):
-        all_data.append({
+    all_data.extend(
+        {
             "Spraying Chemical": spray.get("chemical_name", ""),
             "Spraying Date": str(to_date(spray.get("spraying_date"))),
             "Spraying Qty": spray.get("spraying_qty", 0),
-        })
-
+        }
+        for spray in st.session_state.spraying
+    )
     # Add harvesting data
     for i, harvest in enumerate(st.session_state.harvesting):
         all_data.append({
@@ -318,8 +380,47 @@ if farmer_id or selected_farmer == "➕ Add New Farmer":
 
     buffer.seek(0)
     st.download_button(
-        label="📥 Download All Data as Excel",
+        label="📥 Download Single Farmer Data",
         data=buffer,
-        file_name="farmer_records.xlsx",
+        file_name="single_farmer.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+
+# ---------------- Download All Farmers Data ----------------
+if st.button("📥 Download All Farmers Data"):
+    try:
+        # Fetch all data from each table
+        farmers = supabase.table("farmers").select("*").execute().data
+        nursery = supabase.table("nursery").select("*").execute().data
+        spraying = supabase.table("spraying").select("*").execute().data
+        harvesting = supabase.table("harvesting").select("*").execute().data
+        receiving = supabase.table("receiving").select("*").execute().data
+
+        # Convert to DataFrames
+        df_farmers = pd.DataFrame(farmers)
+        df_nursery = pd.DataFrame(nursery)
+        df_spraying = pd.DataFrame(spraying)
+        df_harvesting = pd.DataFrame(harvesting)
+        df_receiving = pd.DataFrame(receiving)
+
+        # Save to Excel with multiple sheets
+        buffer = BytesIO()
+        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+            df_farmers.to_excel(writer, sheet_name="Farmers", index=False)
+            df_nursery.to_excel(writer, sheet_name="Nursery", index=False)
+            df_spraying.to_excel(writer, sheet_name="Spraying", index=False)
+            df_harvesting.to_excel(writer, sheet_name="Harvesting", index=False)
+            df_receiving.to_excel(writer, sheet_name="Receiving", index=False)
+
+        buffer.seek(0)
+
+        st.download_button(
+            label="📥 Download All Farmers Data (Excel)",
+            data=buffer,
+            file_name="all_farmers_data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    except Exception as e:
+        st.error(f"❌ Error downloading data: {e}")
