@@ -4,24 +4,29 @@ from io import BytesIO
 from supabase import create_client, Client
 import base64
 import os 
-
 import streamlit as st
 import base64
 
 def get_base64_of_bin_file(bin_file):
     """Encodes a binary file (e.g., an image) into a base64 string."""
+    import base64
     with open(bin_file, 'rb') as f:
         data = f.read()
     return base64.b64encode(data).decode()
 
-def set_sidebar_bg(image_file, opacity=0.3):
-    """Sets a local image as the background of the sidebar only with given opacity."""
+def set_sidebar_style(image_file, opacity=0.7, width="350px"):
+    """Sets sidebar background and increases its width."""
     bin_str = get_base64_of_bin_file(image_file)
-    sidebar_bg = f"""
+    sidebar_style = f"""
     <style>
+    /* Increase sidebar width */
     [data-testid="stSidebar"] {{
+        min-width: {width};
+        max-width: {width};
         position: relative;
     }}
+
+    /* Add background image */
     [data-testid="stSidebar"]::before {{
         content: "";
         position: absolute;
@@ -36,22 +41,22 @@ def set_sidebar_bg(image_file, opacity=0.3):
         opacity: {opacity};
         z-index: 0;
     }}
+
     [data-testid="stSidebar"] * {{
         position: relative;
         z-index: 1;
     }}
     </style>
     """
-    st.markdown(sidebar_bg, unsafe_allow_html=True)
+    st.markdown(sidebar_style, unsafe_allow_html=True)
 
 # Example usage
-set_sidebar_bg("bgimage.jpg", opacity=0.5)
+set_sidebar_style("bgimage.jpg", opacity=0.8, width="400px")
 
 # Sidebar content
-st.sidebar.title(" ")
-st.sidebar.write(" ")
+st.sidebar.title("")
+st.sidebar.write("")
 
-# Main content
 st.write(" ")
 
 # ---------------- Supabase Setup ----------------
