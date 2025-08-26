@@ -3,6 +3,7 @@ import pandas as pd
 from io import BytesIO
 from supabase import create_client, Client
 import base64
+import os 
 
 import streamlit as st
 import base64
@@ -55,8 +56,8 @@ st.write(" ")
 
 # ---------------- Supabase Setup ----------------
 # Fetch from secrets
-supabase_url = st.secrets["SUPABASE_URL"]
-supabase_key = st.secrets["SUPABASE_KEY"]
+supabase_url = os.environ["SUPABASE_URL"]
+supabase_key = os.environ["SUPABASE_KEY"]
 
 # Create Supabase client
 supabase: Client = create_client(supabase_url, supabase_key)
