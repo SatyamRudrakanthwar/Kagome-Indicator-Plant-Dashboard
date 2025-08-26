@@ -62,19 +62,16 @@ supabase_key = os.environ["SUPABASE_KEY"]
 # Create Supabase client
 supabase: Client = create_client(supabase_url, supabase_key)
 
-import streamlit as st
-
-col1, col2, col3, col4, col5 = st.columns([2, 1, 0.2, 1, 2])
+col1, col2, col3, col4, col5 = st.columns([2, 2, 1, 2, 2])
 
 with col2:
-    st.image("AgriSavant Logo.png", width=100)
-    
+    st.image("AgriSavant Logo.png", use_container_width  =True)
 
 with col4:
-    st.image("Kagome-logo2.png", width=500)
+    st.image("Kagome-logo2.png", use_container_width  =True)
 
 st.markdown(
-    "<h1 style='text-align: center;'>Agrisavant - Kagome Dashboard</h1>", 
+    "<h1 style='text-align: center; font-size: 42px;'>Agrisavant - Kagome Dashboard</h1>", 
     unsafe_allow_html=True
 )
 
